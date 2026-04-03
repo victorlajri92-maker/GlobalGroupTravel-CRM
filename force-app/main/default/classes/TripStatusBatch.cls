@@ -1,8 +1,8 @@
-public class TripStatusBatch implements Database.Batchable<sObject> {
+global class TripStatusBatch implements Database.Batchable<sObject> {
     
     // ETAPE 1 : start() - On récupère TOUS les voyages
     // qui ne sont pas annulés car on doit vérifier leur statut
-    public Database.QueryLocator start(Database.BatchableContext bc) {
+    global Database.QueryLocator start(Database.BatchableContext bc) {
         
         return Database.getQueryLocator([
             SELECT Id, Status__c, Start_Date__c, End_Date__c
@@ -12,7 +12,7 @@ public class TripStatusBatch implements Database.Batchable<sObject> {
     }
     
     // ETAPE 2 : execute() - On vérifie les dates et on met à jour le statut
-    public void execute(Database.BatchableContext bc, List<Trip__c> trips) {
+    global void execute(Database.BatchableContext bc, List<Trip__c> trips) {
         
         // On récupère la date d'aujourd'hui
         Date today = Date.today();
@@ -42,7 +42,6 @@ public class TripStatusBatch implements Database.Batchable<sObject> {
             }
             
             // On ajoute le voyage à la liste seulement si le statut a changé
-            // Pas besoin de mettre à jour si rien n'a changé !
             if (trip.Status__c != oldStatus) {
                 tripsToUpdate.add(trip);
             }
@@ -55,7 +54,7 @@ public class TripStatusBatch implements Database.Batchable<sObject> {
     }
     
     // ETAPE 3 : finish() - On log la fin du batch
-    public void finish(Database.BatchableContext bc) {
+    global void finish(Database.BatchableContext bc) {
         System.debug('TripStatusBatch terminé avec succès');
     }
 }

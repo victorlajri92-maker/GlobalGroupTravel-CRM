@@ -19,7 +19,7 @@ public class TripStatusBatchTest {
         );
         insert tripAvenir;
         
-        // Voyage "En cours" : commence aujourd'hui ou avant, finit après
+        // Voyage "En cours" : commence avant aujourd'hui, finit après
         Trip__c tripEnCours = new Trip__c(
             Name = 'Voyage En Cours',
             Status__c = 'A venir',
@@ -46,8 +46,7 @@ public class TripStatusBatchTest {
         Test.startTest();
         
         // On lance le batch
-        TripStatusBatch batch = new TripStatusBatch();
-        Database.executeBatch((Database.Batchable<sObject>) batch, 200);
+        Database.executeBatch(new TripStatusBatch());
         
         Test.stopTest();
         
