@@ -1,5 +1,6 @@
 global class TripStatusBatch implements Database.Batchable<sObject> {
     
+    // Chaque matin, Salesforce vérifie tous les voyages et met à jour leur statut automatiquement
     // ETAPE 1 : start() - On récupère TOUS les voyages
     // qui ne sont pas annulés car on doit vérifier leur statut
     global Database.QueryLocator start(Database.BatchableContext bc) {

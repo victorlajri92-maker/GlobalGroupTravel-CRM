@@ -1,6 +1,7 @@
 public class TripCancellationBatch implements Database.Batchable<sObject> {
     
-    // ETAPE 1 : start() - Salesforce appelle cette méthode en premier
+    // Chaque matin à 6h, Salesforce vérifie tous les voyages qui commencent dans 7 jours. Si un voyage a moins de 10 participants → il est automatiquement annulé
+    //ETAPE 1 : start() - Salesforce appelle cette méthode en premier
     // Elle définit QUELS enregistrements on veut traiter
     public Database.QueryLocator start(Database.BatchableContext bc) {
         
