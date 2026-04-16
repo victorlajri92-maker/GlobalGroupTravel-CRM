@@ -13,6 +13,20 @@ public class TripHandler {
             // On vérifie que l'opportunité est bien "Closed Won"
             if (opp.StageName == 'Closed Won') {
                 
+                // On vérifie que les dates sont cohérentes AVANT de créer le Trip__c
+                // Si End Date <= Start Date, on bloque directement sur l'Opportunity
+                // avec un message d'erreur court et clair pour l'utilisateur
+                if (opp.Start_Date__c != null && opp.End_Date__c != null
+                    && opp.End_Date__c <= opp.Start_Date__c) {
+                    
+                    // addError() affiche le message directement sur l'Opportunity
+                    // et bloque la sauvegarde sans message technique
+                    opp.addError('La date de fin doit être postérieure à la date de début.');
+                    
+                    // On arrête tout de suite, pas besoin de continuer
+                    return;
+                }
+                
                 // On crée un nouveau voyage avec les infos de l'opportunité
                 Trip__c newTrip = new Trip__c(
                     Name = 'Voyage - ' + opp.Name,
