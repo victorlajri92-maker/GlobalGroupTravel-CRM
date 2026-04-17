@@ -39,14 +39,12 @@ public class TripHandlerTest {
             LIMIT 1
         ];
         
-        // On démarre le test
         Test.startTest();
         
         // On passe l'opportunité en Closed Won
         opp.StageName = 'Closed Won';
         update opp;
         
-        // On arrête le test
         Test.stopTest();
         
         // On vérifie qu'un Trip__c a bien été créé
@@ -93,5 +91,44 @@ public class TripHandlerTest {
         ];
         
         System.assertEquals(0, trips.size(), 'Aucun Trip__c ne devrait être créé');
+    }
+    
+    // Test 3 : Vérifier qu'une erreur est levée si les dates sont invalides
+    // Ce test couvre le nouveau bloc de validation ajouté dans TripHandler
+    @isTest
+    static void testInvalidDatesOnClosedWon() {
+        
+        // On récupère l'opportunité et on met des dates invalides
+        // End Date avant Start Date = dates incorrectes
+        Opportunity opp = [
+            SELECT Id, StageName, Start_Date__c, End_Date__c
+            FROM Opportunity 
+            WHERE Name = 'Test Opportunity' 
+            LIMIT 1
+        ];
+        
+        // On inverse les dates pour les rendre invalides
+        opp.Start_Date__c = Date.today().addDays(10);
+        opp.End_Date__c = Date.today().addDays(5);
+        update opp;
+        
+        Test.startTest();
+        
+        // On passe en Closed Won avec des dates invalides
+        opp.StageName = 'Closed Won';
+        
+        Boolean hasError = false;
+        try {
+            // Cette mise à jour doit échouer car les dates sont invalides
+            update opp;
+        } catch (DmlException e) {
+            // On récupère l'erreur et on confirme qu'elle a bien eu lieu
+            hasError = true;
+        }
+        
+        Test.stopTest();
+        
+        // On vérifie qu'une erreur a bien été levée
+        System.assertEquals(true, hasError, 'Une erreur aurait dû être levée pour des dates invalides');
     }
 }
