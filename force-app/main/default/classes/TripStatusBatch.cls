@@ -1,30 +1,44 @@
 global class TripStatusBatch implements Database.Batchable<sObject> {
     
-    // Chaque matin, Salesforce vérifie tous les voyages et met à jour leur statut automatiquement
-    // ETAPE 1 : start() - On récupère TOUS les voyages
-    // qui ne sont pas annulés car on doit vérifier leur statut
+    // ETAPE 1 : start() - On récupère UNIQUEMENT les voyages
+    // dont le statut est INCORRECT par rapport aux dates actuelles
+    // On exclut les voyages dont le statut est déjà correct
     global Database.QueryLocator start(Database.BatchableContext bc) {
+        
+        Date today = Date.today();
         
         return Database.getQueryLocator([
             SELECT Id, Status__c, Start_Date__c, End_Date__c
             FROM Trip__c
             WHERE Status__c != 'Annulé'
+            AND (
+                // Cas 1 : statut "A venir" mais la date de début est déjà passée
+                // → devrait être "En cours" ou "Terminé"
+                (Status__c = 'A venir' AND Start_Date__c <= :today)
+                OR
+                // Cas 2 : statut "En cours" mais la date de fin est déjà passée
+                // → devrait être "Terminé"
+                (Status__c = 'En cours' AND End_Date__c < :today)
+                OR
+                // Cas 3 : statut "En cours" mais la date de début est dans le futur
+                // → devrait être "A venir"
+                (Status__c = 'En cours' AND Start_Date__c > :today)
+                OR
+                // Cas 4 : statut "Terminé" mais la date de fin n'est pas encore passée
+                // → devrait être "A venir" ou "En cours"
+                (Status__c = 'Terminé' AND End_Date__c >= :today)
+            )
         ]);
     }
     
-    // ETAPE 2 : execute() - On vérifie les dates et on met à jour le statut
+    // ETAPE 2 : execute() - On met à jour le statut selon les dates
     global void execute(Database.BatchableContext bc, List<Trip__c> trips) {
         
-        // On récupère la date d'aujourd'hui
         Date today = Date.today();
-        
-        // On crée une liste vide pour stocker les voyages à mettre à jour
         List<Trip__c> tripsToUpdate = new List<Trip__c>();
         
-        // On parcourt chaque voyage
         for (Trip__c trip : trips) {
             
-            // On stocke l'ancien statut pour comparer après
             String oldStatus = trip.Status__c;
             
             // RÈGLE 1 : Si aujourd'hui est avant la date de début → "A venir"
