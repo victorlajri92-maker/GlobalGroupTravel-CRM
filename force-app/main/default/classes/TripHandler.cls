@@ -2,7 +2,8 @@ public class TripHandler {
     
     // Cette méthode est appelée par le trigger OpportunityTrigger
     // Elle reçoit la liste des opportunités qui viennent d'être mises à jour
-    public static void createTripFromOpportunity(List<Opportunity> newOpportunities) {
+    // ET l'ancienne version de chaque opportunité pour comparer les changements
+    public static void createTripFromOpportunity(List<Opportunity> newOpportunities, Map<Id, Opportunity> oldOpportunityMap) {
         
         // On crée une liste vide qui va stocker les voyages à créer
         List<Trip__c> tripsToCreate = new List<Trip__c>();
@@ -10,21 +11,24 @@ public class TripHandler {
         // On parcourt chaque opportunité mise à jour
         for (Opportunity opp : newOpportunities) {
             
-            // On vérifie que l'opportunité est bien "Closed Won"
-            if (opp.StageName == 'Closed Won') {
+            // On récupère l'ancienne version de cette opportunité
+            Opportunity oldOpp = oldOpportunityMap.get(opp.Id);
+            
+            // On vérifie deux choses :
+            // 1. L'opportunité est bien en "Closed Won" MAINTENANT
+            // 2. Elle N'ÉTAIT PAS déjà en "Closed Won" AVANT
+            // Si elle était déjà en Closed Won → on ne recrée pas de Trip__c !
+            if (opp.StageName == 'Closed Won' && oldOpp.StageName != 'Closed Won') {
                 
-                // On vérifie que les dates sont cohérentes AVANT de créer le Trip__c
-                // Si End Date <= Start Date, on bloque directement sur l'Opportunity
-                // avec un message d'erreur court et clair pour l'utilisateur
+                // On vérifie les dates avant de créer le Trip__c
                 if (opp.Start_Date__c != null && opp.End_Date__c != null
                     && opp.End_Date__c <= opp.Start_Date__c) {
                     
-                    // addError() affiche le message directement sur l'Opportunity
-                    // et bloque la sauvegarde sans message technique
+                    // REMARQUE 2 : on utilise continue au lieu de return
+                    // pour ne pas bloquer les autres opportunités
+                    // On ajoute l'erreur uniquement sur cette opportunité
                     opp.addError('La date de fin doit être postérieure à la date de début.');
-                    
-                    // On arrête tout de suite, pas besoin de continuer
-                    return;
+                    continue; // On passe à l'opportunité suivante
                 }
                 
                 // On crée un nouveau voyage avec les infos de l'opportunité
